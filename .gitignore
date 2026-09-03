@@ -1,0 +1,13 @@
+# Generated on first `pytest` run by conftest.py, or by hand:
+#     python tools/make_sample_data.py
+# Fully determined by its seed, ~70 MB, and smaller as a generator than as data.
+sample_data/
+
+# Built by explorer/build.py from the packed dataset.
+explorer/results/
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+lab/cache/

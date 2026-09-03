@@ -1,0 +1,21 @@
+[project]
+name = "options-research-engine"
+version = "0.1.0"
+description = "A backtesting engine for intraday, same-day-expiry index options"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "polars>=1.0",
+    "scipy>=1.11",
+    "optuna>=3.6",       # search.py only
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["lab"]
+# Tests that assert facts about the licensed production dataset rather than
+# about the engine. They skip unless LAB_DATA_ROOT points at it. See README.
+markers = ["realdata: needs the production dataset, not the bundled sample"]
+addopts = "-q -ra"
