@@ -116,13 +116,10 @@ lookahead guards — runs against the sample data.
 Recordings of the live interfaces running in their built-in demo modes — synthetic
 sessions on an accelerated clock, no broker connection:
 
+- [**P&L explorer**](https://htmlpreview.github.io/?https://github.com/trigram777/ABOT/blob/main/explorer/results/explorer.html) — a browser tool for exploring exit policies over a large panel
+  of historical entries
 - **Trading desktop** (Qt) — dashboard and live chart <!-- link -->
 - **Terminal interface** (Textual) <!-- asciinema link -->
-- **P&L explorer** — a browser tool for exploring exit policies over a large panel
-  of historical entries <!-- link -->
-
-<!-- ADJUST: fill in links; the P&L explorer runs on permuted/synthetic data,
-     see the note in its own page -->
 
 ---
 
