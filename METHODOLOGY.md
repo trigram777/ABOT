@@ -693,16 +693,9 @@ publishable without publishing anything proprietary.
 
 ## Note on collaboration
 
-<!-- ⚠️ DECIDE BEFORE PUBLISHING — see accompanying notes. Options are:
-     (a) delete this section entirely,
-     (b) keep a factual one-liner,
-     (c) expand it into a short paragraph about the working method.
-     Recommendation: (b) or (c). Not (a). -->
-
-*[Placeholder — this programme was carried out in sustained collaboration with an
+*This program was carried out in sustained collaboration with an
 AI coding assistant, with all research design, domain judgement, specification
-and adjudication of results directed by the author. Wording to be finalised
-before publication.]*
+and adjudication of results directed by the author.*
 
 ---
 
