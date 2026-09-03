@@ -1,0 +1,835 @@
+<title>Exit Policy Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#eef0f2; --panel:#ffffff; --sunk:#e4e7ea;
+  --line:#d2d7dc; --line-soft:#e2e6ea;
+  --text:#1a2026; --text-dim:#5b666f; --text-faint:#8b959d;
+  --brass:#1f6f78; --brass-bright:#2b8e99; --brass-wash:#d9ecee;
+  --jade:#3f7d5c; --rust:#a8442f; --null:#9aa4ac;
+  --font-ui:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",monospace;
+  --r:3px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12171b; --panel:#1a2126; --sunk:#0d1215;
+  --line:#2c353c; --line-soft:#232b31;
+  --text:#e4e9ec; --text-dim:#95a2ab; --text-faint:#6b777f;
+  --brass:#4fb3bf; --brass-bright:#6fcdd8; --brass-wash:#16292c;
+  --jade:#5fa87c; --rust:#c1614f; --null:#5a656d;
+}}
+:root[data-theme="dark"]{
+  --ground:#12171b; --panel:#1a2126; --sunk:#0d1215;
+  --line:#2c353c; --line-soft:#232b31;
+  --text:#e4e9ec; --text-dim:#95a2ab; --text-faint:#6b777f;
+  --brass:#4fb3bf; --brass-bright:#6fcdd8; --brass-wash:#16292c;
+  --jade:#5fa87c; --rust:#c1614f; --null:#5a656d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--text);
+  font-family:var(--font-ui);font-size:14px;line-height:1.45;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+.mono{font-family:var(--font-data);font-variant-numeric:tabular-nums}
+
+/* ---------- frame ---------- */
+header{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+  padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:17px;letter-spacing:-.01em}
+header h1 span{color:var(--brass)}
+.sub{color:var(--text-dim);font-size:12.5px;max-width:62ch}
+.spacer{flex:1}
+.trials{font-family:var(--font-data);font-size:11.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-dim);
+  border:1px solid var(--line);border-radius:var(--r);padding:5px 10px;
+  background:var(--sunk)}
+.trials b{color:var(--brass);font-weight:600}
+
+main{display:grid;grid-template-columns:288px minmax(0,1fr);gap:1px;
+  background:var(--line-soft);min-height:calc(100vh - 62px)}
+.rail,.field{background:var(--ground);padding:18px 20px}
+.rail{display:flex;flex-direction:column;gap:22px}
+.field{display:flex;flex-direction:column;gap:18px;min-width:0}
+
+/* ---------- controls ---------- */
+.grp{display:flex;flex-direction:column;gap:9px}
+.lab{font-family:var(--font-data);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--text-faint)}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;padding:6px 4px;cursor:pointer;
+  font-family:var(--font-data);font-size:12.5px;color:var(--text-dim);
+  border-right:1px solid var(--line-soft)}
+.seg button:last-child{border-right:0}
+/* brass is a mid-tone, so text on it is a fixed dark ink in BOTH
+   themes — white would sit at 2.3:1 on the light-theme brass. */
+.seg button[aria-pressed="true"]{background:var(--brass);color:#04191c;font-weight:600}
+.clock{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.clock button{border:1px solid var(--line);background:var(--panel);
+  border-radius:var(--r);padding:5px 2px;cursor:pointer;
+  font-family:var(--font-data);font-size:11.5px;color:var(--text-dim)}
+.clock button[aria-pressed="true"]{background:var(--brass);border-color:var(--brass);
+  color:#04191c;font-weight:600}
+.row{display:flex;gap:6px;align-items:center}
+.row label{flex:1;font-size:12.5px;color:var(--text-dim)}
+select,input[type=number],input[type=text]{background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);padding:5px 7px;
+  font-family:var(--font-data);font-size:12.5px;width:100%}
+input::placeholder{color:var(--text-faint)}
+button:focus-visible,select:focus-visible,input:focus-visible{
+  outline:2px solid var(--brass-bright);outline-offset:1px}
+.ghost{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);
+  padding:6px 10px;cursor:pointer;font-family:var(--font-data);font-size:12px;
+  color:var(--text-dim)}
+.ghost:hover{border-color:var(--brass);color:var(--brass)}
+.go{border:1px solid var(--brass);background:var(--brass);color:#04191c;
+  border-radius:var(--r);padding:6px 14px;cursor:pointer;font-weight:600;
+  font-family:var(--font-data);font-size:12px;letter-spacing:.02em}
+.go:hover{background:var(--brass-bright);border-color:var(--brass-bright)}
+/* A staged edit is not yet in the chart, and the control has to say so —
+   otherwise the reader is looking at a curve that no longer matches the
+   inputs above it. */
+.go.pending{background:transparent;color:var(--brass);
+  box-shadow:0 0 0 2px var(--brass-wash) inset}
+.go.pending::before{content:"● "}
+.auto{display:flex;align-items:center;gap:5px;font-family:var(--font-data);
+  font-size:11.5px;color:var(--text-dim);cursor:pointer}
+.auto input{width:auto;margin:0}
+
+/* ---------- readout ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft)}
+.tile{background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.tile .k{font-family:var(--font-data);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-faint)}
+.tile .v{font-family:var(--font-data);font-size:19px;font-variant-numeric:tabular-nums;
+  font-weight:500;letter-spacing:-.02em}
+.tile .n{font-family:var(--font-data);font-size:10.5px;color:var(--text-faint)}
+.pos{color:var(--jade)} .neg{color:var(--rust)}
+
+.card{background:var(--panel);border:1px solid var(--line-soft);padding:14px 16px 12px;
+  display:flex;flex-direction:column;gap:10px}
+.card h3{font-size:13px;letter-spacing:.01em}
+.card .hint{font-size:11.5px;color:var(--text-faint);line-height:1.5}
+canvas{width:100%;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--font-data);
+  font-size:11px;color:var(--text-dim)}
+.legend i{display:inline-block;width:16px;height:2px;vertical-align:middle;
+  margin-right:5px}
+
+/* ---------- indicator units ---------- */
+.units{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft)}
+.unit{background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.unit .top{display:flex;align-items:center;gap:8px}
+.unit .top h3{flex:1;font-size:12.5px}
+.unit .top select{width:auto}
+.ind{display:grid;grid-template-columns:1fr 62px 62px 62px 26px;gap:5px;align-items:center}
+.ind .nm{font-family:var(--font-data);font-size:11.5px;color:var(--text-dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ind.off .nm{color:var(--text-faint)}
+.ind input{padding:4px 5px;font-size:11.5px;text-align:right}
+.ind input.on-c{border-color:var(--jade);color:var(--jade)}
+.ind input.on-p{border-color:var(--rust);color:var(--rust)}
+.ind input.on-g{border-color:var(--brass);color:var(--brass)}
+.ind select.cmp{padding:4px 2px;font-size:11px;text-align:center}
+.heads{display:grid;grid-template-columns:1fr 62px 62px 62px 26px;gap:5px;
+  font-family:var(--font-data);font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-faint);text-align:right}
+.heads span:first-child{text-align:left}
+.range{font-family:var(--font-data);font-size:10px;color:var(--text-faint)}
+
+.note{background:var(--brass-wash);border:1px solid var(--brass);
+  border-left-width:3px;padding:11px 14px;font-size:12.5px;line-height:1.55;
+  color:var(--text)}
+.note b{color:var(--brass)}
+#boot{padding:60px 24px;text-align:center;color:var(--text-dim);
+  font-family:var(--font-data);font-size:13px}
+@media (max-width:900px){main{grid-template-columns:1fr}.rail{border-bottom:1px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:6px}
+.exit{display:grid;grid-template-columns:86px 1fr;gap:6px;align-items:center}
+.exit label{font-size:12.5px;color:var(--text-dim)}
+.ix{display:grid;grid-template-columns:1fr 52px 46px 60px;gap:5px;align-items:center}
+.seg.small button{font-size:11.5px;padding:5px 2px}
+.warn{font-size:11.5px;color:var(--text-faint);line-height:1.5}
+</style>
+<header>
+  <h1>Exit Policy <span>Explorer</span></h1>
+  <div class="sub">Six entry slots across the session, the whole price path.
+    Exits may be prices, clocks, trails or the chart itself &mdash; and an exit
+    can SELL rather than close.
+    <b>Synthetic data</b> &mdash; a software demo, not a result.</div>
+  <div class="spacer"></div>
+  <div class="trials">configurations tried <b id="ntrials">0</b></div>
+  <label class="auto"><input type="checkbox" id="autoup"> live</label>
+  <button class="go" id="go">update</button>
+  <button class="ghost" id="reset">reset</button>
+</header>
+
+<div id="boot">unpacking 19,200 entries and their price paths&hellip;</div>
+
+<main id="app" hidden>
+  <div class="rail">
+    <div class="grp">
+      <div class="lab">Contract</div>
+      <div class="seg small" id="sel"></div>
+      <div class="seg small" id="side"></div>
+    </div>
+    <div class="grp">
+      <div class="lab">Entry times &mdash; ET</div>
+      <div class="clock" id="slots"></div>
+      <div class="row"><button class="ghost" id="sall">all</button>
+        <button class="ghost" id="slate">last 15 min</button>
+        <button class="ghost" id="snone">none</button></div>
+    </div>
+    <div class="grp">
+      <div class="lab">Exit &mdash; first to fire wins</div>
+      <div class="exit">
+        <label for="l">Stop &nbsp;L&times;</label><select id="l"></select>
+        <label for="w">Target &nbsp;W&times;</label><select id="w"></select>
+        <label for="tr">Trail give</label><select id="tr"></select>
+        <label for="ck">Clock</label><select id="ck"></select>
+      </div>
+      <div class="warn">A stop fires on the intra-minute <b>low</b>; a target is
+        a resting limit tested on the <b>midpoint</b>. Every level is snapped to
+        the tick grid. Ties go to the stop.</div>
+    </div>
+    <div class="grp">
+      <div class="lab">Chart exit</div>
+      <div class="ix">
+        <select id="xcol"></select><select id="xtf"></select>
+        <select id="xdir"></select>
+        <input type="text" id="xval" placeholder="level">
+      </div>
+      <div class="warn" id="xrange"></div>
+    </div>
+    <div class="grp">
+      <div class="lab">On exit, do what?</div>
+      <div class="seg small" id="act"></div>
+      <div class="warn" id="actwhy">Close and take the proceeds.</div>
+    </div>
+    <div class="grp">
+      <div class="lab">Null band</div>
+      <div class="row"><label for="draws">Permutations</label><select id="draws"></select></div>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h3>Cumulative P&amp;L, one contract</h3>
+      <canvas id="eq" height="290"></canvas>
+      <div class="legend">
+        <span><i style="background:var(--brass)"></i>this rule</span>
+        <span><i style="background:var(--null)"></i>permuted chart &mdash; 5th to 95th</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>What each entry paid, as a multiple of what it cost</h3>
+      <canvas id="hist" height="168"></canvas>
+      <div class="hint" id="why"></div>
+    </div>
+    <div class="units" id="units"></div>
+    <div class="note">
+      <b>&sect;5.69: the binding number here is not the mean, it is the
+      break-even slippage per stop.</b> A tick charged on every stop that fires
+      is the difference between this method working and not, so the tile reads
+      it directly. The grey band is the same rule on a <em>different day&rsquo;s</em>
+      chart; a curve inside it is the schedule, not the signal.
+    </div>
+  </div>
+</main>
+
+<script id="hdr" type="application/json" data-blob="demo_calc_blob.bin">{"n": 19200, "days": ["2017-01-03", "2017-01-04", "2017-01-05", "2017-01-06", "2017-01-09", "2017-01-10", "2017-01-11", "2017-01-12", "2017-01-13", "2017-01-16", "2017-01-17", "2017-01-18", "2017-01-19", "2017-01-20", "2017-01-23", "2017-01-24", "2017-01-25", "2017-01-26", "2017-01-27", "2017-01-30", "2017-01-31", "2017-02-01", "2017-02-02", "2017-02-03", "2017-02-06", "2017-02-07", "2017-02-08", "2017-02-09", "2017-02-10", "2017-02-13", "2017-02-14", "2017-02-15", "2017-02-16", "2017-02-17", "2017-02-20", "2017-02-21", "2017-02-22", "2017-02-23", "2017-02-24", "2017-02-27", "2017-02-28", "2017-03-01", "2017-03-02", "2017-03-03", "2017-03-06", "2017-03-07", "2017-03-08", "2017-03-09", "2017-03-10", "2017-03-13", "2017-03-14", "2017-03-15", "2017-03-16", "2017-03-17", "2017-03-20", "2017-03-21", "2017-03-22", "2017-03-23", "2017-03-24", "2017-03-27", "2017-03-28", "2017-03-29", "2017-03-30", "2017-03-31", "2017-04-03", "2017-04-04", "2017-04-05", "2017-04-06", "2017-04-07", "2017-04-10", "2017-04-11", "2017-04-12", "2017-04-13", "2017-04-14", "2017-04-17", "2017-04-18", "2017-04-19", "2017-04-20", "2017-04-21", "2017-04-24", "2017-04-25", "2017-04-26", "2017-04-27", "2017-04-28", "2017-05-01", "2017-05-02", "2017-05-03", "2017-05-04", "2017-05-05", "2017-05-08", "2017-05-09", "2017-05-10", "2017-05-11", "2017-05-12", "2017-05-15", "2017-05-16", "2017-05-17", "2017-05-18", "2017-05-19", "2017-05-22", "2017-05-23", "2017-05-24", "2017-05-25", "2017-05-26", "2017-05-29", "2017-05-30", "2017-05-31", "2017-06-01", "2017-06-02", "2017-06-05", "2017-06-06", "2017-06-07", "2017-06-08", "2017-06-09", "2017-06-12", "2017-06-13", "2017-06-14", "2017-06-15", "2017-06-16", "2017-06-19", "2017-06-20", "2017-06-21", "2017-06-22", "2017-06-23", "2017-06-26", "2017-06-27", "2017-06-28", "2017-06-29", "2017-06-30", "2017-07-03", "2017-07-04", "2017-07-05", "2017-07-06", "2017-07-07", "2017-07-10", "2017-07-11", "2017-07-12", "2017-07-13", "2017-07-14", "2017-07-17", "2017-07-18", "2017-07-19", "2017-07-20", "2017-07-21", "2017-07-24", "2017-07-25", "2017-07-26", "2017-07-27", "2017-07-28", "2017-07-31", "2017-08-01", "2017-08-02", "2017-08-03", "2017-08-04", "2017-08-07", "2017-08-08", "2017-08-09", "2017-08-10", "2017-08-11", "2017-08-14", "2017-08-15", "2017-08-16", "2017-08-17", "2017-08-18", "2017-08-21", "2017-08-22", "2017-08-23", "2017-08-24", "2017-08-25", "2017-08-28", "2017-08-29", "2017-08-30", "2017-08-31", "2017-09-01", "2017-09-04", "2017-09-05", "2017-09-06", "2017-09-07", "2017-09-08", "2017-09-11", "2017-09-12", "2017-09-13", "2017-09-14", "2017-09-15", "2017-09-18", "2017-09-19", "2017-09-20", "2017-09-21", "2017-09-22", "2017-09-25", "2017-09-26", "2017-09-27", "2017-09-28", "2017-09-29", "2017-10-02", "2017-10-03", "2017-10-04", "2017-10-05", "2017-10-06", "2017-10-09", "2017-10-10", "2017-10-11", "2017-10-12", "2017-10-13", "2017-10-16", "2017-10-17", "2017-10-18", "2017-10-19", "2017-10-20", "2017-10-23", "2017-10-24", "2017-10-25", "2017-10-26", "2017-10-27", "2017-10-30", "2017-10-31", "2017-11-01", "2017-11-02", "2017-11-03", "2017-11-06", "2017-11-07", "2017-11-08", "2017-11-09", "2017-11-10", "2017-11-13", "2017-11-14", "2017-11-15", "2017-11-16", "2017-11-17", "2017-11-20", "2017-11-21", "2017-11-22", "2017-11-23", "2017-11-24", "2017-11-27", "2017-11-28", "2017-11-29", "2017-11-30", "2017-12-01", "2017-12-04", "2017-12-05", "2017-12-06", "2017-12-07", "2017-12-08", "2017-12-11", "2017-12-12", "2017-12-13", "2017-12-14", "2017-12-15", "2017-12-18", "2017-12-19", "2017-12-20", "2017-12-21", "2017-12-22", "2017-12-25", "2017-12-26", "2017-12-27", "2017-12-28", "2017-12-29", "2018-01-01", "2018-01-02", "2018-01-03", "2018-01-04", "2018-01-05", "2018-01-08", "2018-01-09", "2018-01-10", "2018-01-11", "2018-01-12", "2018-01-15", "2018-01-16", "2018-01-17", "2018-01-18", "2018-01-19", "2018-01-22", "2018-01-23", "2018-01-24", "2018-01-25", "2018-01-26", "2018-01-29", "2018-01-30", "2018-01-31", "2018-02-01", "2018-02-02", "2018-02-05", "2018-02-06", "2018-02-07", "2018-02-08", "2018-02-09", "2018-02-12", "2018-02-13", "2018-02-14", "2018-02-15", "2018-02-16", "2018-02-19", "2018-02-20", "2018-02-21", "2018-02-22", "2018-02-23", "2018-02-26", "2018-02-27", "2018-02-28", "2018-03-01", "2018-03-02", "2018-03-05", "2018-03-06", "2018-03-07", "2018-03-08", "2018-03-09", "2018-03-12", "2018-03-13", "2018-03-14", "2018-03-15", "2018-03-16", "2018-03-19", "2018-03-20", "2018-03-21", "2018-03-22", "2018-03-23", "2018-03-26", "2018-03-27", "2018-03-28", "2018-03-29", "2018-03-30", "2018-04-02", "2018-04-03", "2018-04-04", "2018-04-05", "2018-04-06", "2018-04-09", "2018-04-10", "2018-04-11", "2018-04-12", "2018-04-13", "2018-04-16", "2018-04-17", "2018-04-18", "2018-04-19", "2018-04-20", "2018-04-23", "2018-04-24", "2018-04-25", "2018-04-26", "2018-04-27", "2018-04-30", "2018-05-01", "2018-05-02", "2018-05-03", "2018-05-04", "2018-05-07", "2018-05-08", "2018-05-09", "2018-05-10", "2018-05-11", "2018-05-14", "2018-05-15", "2018-05-16", "2018-05-17", "2018-05-18", "2018-05-21", "2018-05-22", "2018-05-23", "2018-05-24", "2018-05-25", "2018-05-28", "2018-05-29", "2018-05-30", "2018-05-31", "2018-06-01", "2018-06-04", "2018-06-05", "2018-06-06", "2018-06-07", "2018-06-08", "2018-06-11", "2018-06-12", "2018-06-13", "2018-06-14", "2018-06-15", "2018-06-18", "2018-06-19", "2018-06-20", "2018-06-21", "2018-06-22", "2018-06-25", "2018-06-26", "2018-06-27", "2018-06-28", "2018-06-29", "2018-07-02", "2018-07-03", "2018-07-04", "2018-07-05", "2018-07-06", "2018-07-09", "2018-07-10", "2018-07-11", "2018-07-12", "2018-07-13", "2018-07-16"], "slots": [30, 90, 150, 210, 270, 330], "sel": ["delta:0.1", "delta:0.25", "delta:0.4", "price:1"], "horizon": 61, "columns": ["s_pctb", "f_pctb", "pctb_spread", "s_bandwidth", "f_bandwidth", "bandwidth_ratio", "gap_low", "gap_mid", "gap_high", "prev_range", "green_red_avg", "zone", "slope_pair"], "tfs": [5, 15, 30], "bars": {"5": [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200, 205, 210, 215, 220, 225, 230, 235, 240, 245, 250, 255, 260, 265, 270, 275, 280, 285, 290, 295, 300, 305, 310, 315, 320, 325, 330, 335, 340, 345, 350, 355, 360, 365, 370, 375, 380, 385, 390], "15": [30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360, 375, 390], "30": [30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390]}, "ind": [{"col": "s_pctb", "tf": 5, "lo": -0.38194857895393447, "hi": 1.3841106382956778, "ok": true}, {"col": "f_pctb", "tf": 5, "lo": -0.5890597807859228, "hi": 1.538361549181922, "ok": true}, {"col": "pctb_spread", "tf": 5, "lo": -0.6568529748111441, "hi": 0.6732770944067169, "ok": true}, {"col": "s_bandwidth", "tf": 5, "lo": 0.0017719402884844838, "hi": 0.0352566370727858, "ok": true}, {"col": "f_bandwidth", "tf": 5, "lo": 0.0011461191233349563, "hi": 0.02274357882298937, "ok": true}, {"col": "bandwidth_ratio", "tf": 5, "lo": 0.19415223311135965, "hi": 1.3181292286802737, "ok": true}, {"col": "gap_low", "tf": 5, "lo": -0.0027756982977933755, "hi": 0.026181088232694993, "ok": true}, {"col": "gap_mid", "tf": 5, "lo": -0.011600483386979051, "hi": 0.01267726233348084, "ok": true}, {"col": "gap_high", "tf": 5, "lo": -0.003009525795236899, "hi": 0.024761499473330385, "ok": true}, {"col": "prev_range", "tf": 5, "lo": 0.0001762188102500834, "hi": 0.00447922970582567, "ok": true}, {"col": "green_red_avg", "tf": 5, "lo": -0.8, "hi": 0.8, "ok": true}, {"col": "zone", "tf": 5, "lo": -1.0, "hi": 4.0, "ok": true}, {"col": "slope_pair", "tf": 5, "lo": -2.0, "hi": 2.0, "ok": true}, {"col": "s_pctb", "tf": 15, "lo": -0.3322871860198494, "hi": 1.3625315274186482, "ok": true}, {"col": "f_pctb", "tf": 15, "lo": -0.5669406324293942, "hi": 1.5956088795565537, "ok": true}, {"col": "pctb_spread", "tf": 15, "lo": -0.6613160597275622, "hi": 0.6690429878702026, "ok": true}, {"col": "s_bandwidth", "tf": 15, "lo": 0.002590267283175284, "hi": 0.06656730026345414, "ok": true}, {"col": "f_bandwidth", "tf": 15, "lo": 0.0018483326068615788, "hi": 0.04497030884359365, "ok": true}, {"col": "bandwidth_ratio", "tf": 15, "lo": 0.1608915165121809, "hi": 1.2977238993591123, "ok": true}, {"col": "gap_low", "tf": 15, "lo": -0.004172540903716888, "hi": 0.058766709339633356, "ok": true}, {"col": "gap_mid", "tf": 15, "lo": -0.01859718480307638, "hi": 0.025672286552174566, "ok": true}, {"col": "gap_high", "tf": 15, "lo": -0.0057371206140032615, "hi": 0.042821021324138446, "ok": true}, {"col": "prev_range", "tf": 15, "lo": 0.0005883299762075435, "hi": 0.008750149352449894, "ok": true}, {"col": "green_red_avg", "tf": 15, "lo": -0.8, "hi": 0.8, "ok": true}, {"col": "zone", "tf": 15, "lo": -1.0, "hi": 4.0, "ok": true}, {"col": "slope_pair", "tf": 15, "lo": -2.0, "hi": 2.0, "ok": true}, {"col": "s_pctb", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "f_pctb", "tf": 30, "lo": -0.4753210178958815, "hi": 1.4527022215789773, "ok": true}, {"col": "pctb_spread", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "s_bandwidth", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "f_bandwidth", "tf": 30, "lo": 0.002301620212427644, "hi": 0.06738412226550543, "ok": true}, {"col": "bandwidth_ratio", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "gap_low", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "gap_mid", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "gap_high", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "prev_range", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "green_red_avg", "tf": 30, "lo": -1.0, "hi": 0.8, "ok": true}, {"col": "zone", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}, {"col": "slope_pair", "tf": 30, "lo": 0.0, "hi": 1.0, "ok": false}], "widths": {"head": 8, "aux": 4}}</script>
+<script id="blob" type="text/plain"></script>
+<script>
+const H = JSON.parse(document.getElementById('hdr').textContent);
+const NA = -32768, HZ = H.horizon;
+let D = null, trials = 0;
+
+/** The blob arrives one of two ways and ONE decoder serves both, so the two
+ *  builds cannot drift in how they read the format.
+ *
+ *  SPLIT  (`build.py --split`) -- the page carries a URL and fetches the gzip
+ *         stream, which begins inflating while it is still downloading and is
+ *         cached separately from the HTML. Base64 is a flat 33% tax and this
+ *         does not pay it. Needs a real origin: `fetch` against a file:// URL
+ *         is blocked in Chrome.
+ *  INLINE (default) -- the bytes sit in the document as base64. Larger, and it
+ *         must be parsed before anything runs, but it opens from file:// and
+ *         from anywhere a second request is refused.
+ *
+ *  The split file is named `.bin`, NOT `.gz`, deliberately. A server seeing a
+ *  `.gz` extension may send it with `Content-Encoding: gzip`; the browser then
+ *  inflates it in transit and DecompressionStream is handed something that is
+ *  no longer gzip. Keeping the extension neutral keeps the encoding ours. */
+async function decode() {
+  const url = document.getElementById('hdr').dataset.blob;
+  let stream;
+  if (url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
+    stream = res.body;
+  } else {
+    const b64 = document.getElementById('blob').textContent.trim();
+    stream = new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))]).stream();
+  }
+  const buf = await new Response(
+    stream.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  const n = H.n, wh = H.widths.head, wa = H.widths.aux;
+  let o = 0;
+  const head = new Int16Array(buf, o, n * wh); o += n * wh * 2;
+  const aux = new Float32Array(buf, o, n * wa); o += n * wa * 4;
+  const S = {};
+  for (const k of ['mid', 'low', 'short', 'cover']) {
+    S[k] = new Int16Array(buf, o, n * HZ); o += n * HZ * 2;
+  }
+  const ind = {};
+  for (const tf of H.tfs) {
+    const nb = H.bars[String(tf)].length, nc = H.columns.length;
+    ind[tf] = new Uint8Array(buf, o, H.days.length * nb * nc);
+    o += H.days.length * nb * nc;
+  }
+  return { n, head, aux, S, ind, wh, wa };
+}
+
+const day = i => D.head[i * D.wh], slot = i => D.head[i * D.wh + 1];
+const side = i => D.head[i * D.wh + 2], selOf = i => D.head[i * D.wh + 3];
+const entry = i => D.head[i * D.wh + 4] / 100;
+const live = i => D.head[i * D.wh + 6];
+const strike = i => D.aux[i * D.wa], kShort = i => D.aux[i * D.wa + 1];
+const kCover = i => D.aux[i * D.wa + 2], settle = i => D.aux[i * D.wa + 3];
+const px = (k, i, t) => { const v = D.S[k][i * HZ + t]; return v === NA ? NaN : v / 100; };
+/** Cash settlement of one option, per share. Free and automatic — the whole
+ *  reason a conversion is interesting is that it needs no fill. */
+const intrinsic = (i, K) => side(i) === 0 ? Math.max(0, settle(i) - K)
+  : Math.max(0, K - settle(i));
+const tick = p => p < 3 ? 0.05 : 0.10;
+const snapDown = p => Math.floor(p / tick(p) + 1e-9) * tick(p);
+const fee = p => p >= 1 ? 1.63 : 1.54;
+
+const S = {
+  sel: 0, side: 'auto', slots: new Set([0, 1, 2, 3, 4, 5]),
+  l: 0, w: 0, trail: 0, clock: 0, act: 'close', slip: 0,
+  x: { col: '', tf: 30, dir: 'ge', val: '' }, draws: 20, ind: {}
+};
+
+/* ------------------------------------------------------------ chart exits */
+function indAt(tf, d, bi, ci) {
+  const nb = H.bars[String(tf)].length, nc = H.columns.length;
+  const v = D.ind[tf][(d * nb + bi) * nc + ci];
+  return v === 255 ? NaN : v;
+}
+function toByte(m, v) {
+  return Math.max(0, Math.min(254, Math.round((v - m.lo) / (m.hi - m.lo) * 254)));
+}
+function metaOf(col, tf) { return H.ind.find(m => m.col === col && m.tf === tf); }
+
+/** First minute AFTER entry at which the chart condition holds, or Infinity.
+ *  Bars are absolute minutes from 09:30, so a bar at or before the entry slot
+ *  is information the entry already had and cannot be an exit. */
+function chartExit(i) {
+  const c = S.x;
+  if (!c.col || c.val === '' || isNaN(+c.val)) return Infinity;
+  const m = metaOf(c.col, c.tf);
+  if (!m || !m.ok) return Infinity;
+  const ci = H.columns.indexOf(c.col), bars = H.bars[String(c.tf)];
+  const lvl = toByte(m, +c.val), s = H.slots[slot(i)], d = day(i);
+  for (let b = 0; b < bars.length; b++) {
+    if (bars[b] <= s) continue;
+    const v = indAt(c.tf, d, b, ci);
+    if (isNaN(v)) continue;
+    if (c.dir === 'ge' ? v >= lvl : v <= lvl) return bars[b] - s;
+  }
+  return Infinity;
+}
+
+/* ------------------------------------------------------------- the exit */
+function outcome(i) {
+  const e = entry(i), n = Math.min(live(i), HZ);
+  const lStop = S.l ? snapDown(S.l * e) : 0;
+  const wLim = S.w ? snapDown(S.w * e) : 0;
+  let hw = e, t = -1, why = '';
+  const tX = chartExit(i), tC = S.clock || Infinity;
+  for (let k = 1; k < n; k++) {
+    const m = px('mid', i, k), lo = px('low', i, k);
+    // precedence inside one minute: adverse first (exits.py's convention)
+    if (lStop && !isNaN(lo) && lo <= lStop) { t = k; why = 'L'; break; }
+    if (S.trail && !isNaN(lo) && hw > e) {
+      const lvl = snapDown(S.trail * hw);
+      if (lo <= lvl) { t = k; why = 'T'; break; }
+    }
+    if (k >= tX) { t = k; why = 'X'; break; }
+    if (k >= tC) { t = k; why = 'C'; break; }
+    if (wLim && !isNaN(m) && m >= wLim) { t = k; why = 'W'; break; }
+    if (!isNaN(m)) hw = Math.max(hw, m);
+  }
+  const K = strike(i);
+  if (t < 0) {                                   // never fired — settles free
+    return { pnl: (intrinsic(i, K) - e) * 100 - fee(e), why: 'settle', acted: false };
+  }
+  // what the exit is worth, per share
+  let proceeds;
+  if (why === 'L') proceeds = Math.max(0, lStop - S.slip * tick(e));
+  else if (why === 'T') proceeds = Math.max(0, snapDown(S.trail * hw) - S.slip * tick(e));
+  else if (why === 'W') proceeds = wLim;
+  else proceeds = px('mid', i, t);
+  if (isNaN(proceeds)) proceeds = px('mid', i, t);
+  if (isNaN(proceeds)) return { pnl: (intrinsic(i, K) - e) * 100 - fee(e),
+                                why: 'dark', acted: false };
+
+  if (S.act === 'close') {
+    return { pnl: (proceeds - e) * 100 - fee(e) - fee(proceeds), why, acted: true };
+  }
+  // SHORT or COVER: keep the long, SELL a neighbour, hold the spread to expiry.
+  // No exit fill on the long at all — settlement is free — which is the point.
+  //
+  // **THE CREDIT IS TAKEN AT t+1, NOT t, AND THAT IS THE WHOLE RESULT.** A
+  // minute's quote is the book at the START of that minute, while the stop
+  // triggers on the intra-minute LOW — so the neighbour's price at t existed
+  // BEFORE the trigger. For a stopped call, spot fell during t, so selling at
+  // t's open collects a credit the trigger had already destroyed. Measured:
+  // pricing at t rather than t+1 was worth **$62.73 an entry against a $5.80
+  // result** — more than the entire edge. It only bites the conversions,
+  // because they are the one exit whose FILL is
+  // on a different contract from the TRIGGER.
+  const which = S.act === 'short' ? 'short' : 'cover';
+  const Kc = S.act === 'short' ? kShort(i) : kCover(i);
+  const tc = t + 1;
+  const credit = tc < Math.min(live(i), HZ) ? px(which, i, tc) : NaN;
+  if (isNaN(credit) || isNaN(Kc)) {
+    return { pnl: (proceeds - e) * 100 - fee(e) - fee(proceeds), why: why + '!', acted: true };
+  }
+  const val = intrinsic(i, K) - intrinsic(i, Kc);   // long minus short at expiry
+  return { pnl: (credit - e + val) * 100 - fee(e) - fee(credit), why, acted: true };
+}
+
+/* --------------------------------------------------------------- the rule */
+function compile() {
+  const out = [];
+  for (const [key, cfg] of Object.entries(S.ind)) {
+    const m = metaOf(key, cfg.tf);
+    if (!m || !m.ok) continue;
+    const num = v => (v === '' || v == null || isNaN(+v)) ? null : toByte(m, +v);
+    const c = num(cfg.call), p = num(cfg.put), g = num(cfg.gate);
+    if (c === null && p === null && g === null) continue;
+    out.push({ ci: H.columns.indexOf(key), tf: cfg.tf, c, p, g,
+               cmp: cfg.cmp === 'le' ? -1 : 1 });
+  }
+  return out;
+}
+/** The chart value AT the entry slot — the last bar at or before it. */
+function atEntry(i, tf, ci) {
+  const bars = H.bars[String(tf)], s = H.slots[slot(i)], d = day(i);
+  let v = NaN;
+  for (let b = 0; b < bars.length && bars[b] <= s; b++) {
+    const x = indAt(tf, d, b, ci);
+    if (!isNaN(x)) v = x;
+  }
+  return v;
+}
+function decide(i, rule, srcDay) {
+  if (!rule.length) return S.side === 'call' ? 1 : S.side === 'put' ? 2 : 3;
+  let votes = 0, any = false;
+  for (const r of rule) {
+    const bars = H.bars[String(r.tf)], s = H.slots[slot(i)];
+    let v = NaN;
+    for (let b = 0; b < bars.length && bars[b] <= s; b++) {
+      const x = indAt(r.tf, srcDay, b, r.ci);
+      if (!isNaN(x)) v = x;
+    }
+    if (isNaN(v)) continue;
+    if (r.g !== null && (r.cmp > 0 ? v >= r.g : v <= r.g)) return 0;
+    if (r.c !== null && v >= r.c) { votes++; any = true; }
+    if (r.p !== null && v <= r.p) { votes--; any = true; }
+  }
+  if (S.side === 'call') return (votes > 0 || !any) ? 1 : 0;
+  if (S.side === 'put') return (votes < 0 || !any) ? 2 : 0;
+  if (votes > 0) return 1;
+  if (votes < 0) return 2;
+  return 0;
+}
+
+function run(rule, perm) {
+  const nD = H.days.length, eq = new Float64Array(nD);
+  const xs = []; let n = 0, acted = 0, prem = 0;
+  for (let i = 0; i < D.n; i++) {
+    if (selOf(i) !== S.sel || !S.slots.has(slot(i))) continue;
+    const d = day(i);
+    const want = decide(i, rule, perm ? perm[d] : d);
+    if (want === 0) continue;
+    const me = side(i) === 0 ? 1 : 2;
+    if (want !== 3 && want !== me) continue;
+    const o = outcome(i);
+    eq[d] += o.pnl; n++; prem += entry(i) * 100;
+    if (o.acted) acted++;
+    if (!perm) xs.push(o.pnl / (entry(i) * 100) + 1);
+  }
+  return { eq, n, xs, acted, prem };
+}
+
+/* ------------------------------------------- scoring, charts, and the null */
+/* --------------------------------------------------------------- scoring */
+function score(eq, n) {
+  const nD = eq.length;
+  let tot = 0, sq = 0, pos = 0, live = 0;
+  for (let i = 0; i < nD; i++) { tot += eq[i]; }
+  const mean = tot / nD;
+  for (let i = 0; i < nD; i++) { const d = eq[i] - mean; sq += d * d; if (eq[i] > 0) pos++; if (eq[i] !== 0) live++; }
+  const sd = Math.sqrt(sq / (nD - 1));
+  let peak = 0, cum = 0, dd = 0;
+  const curve = new Float64Array(nD);
+  for (let i = 0; i < nD; i++) { cum += eq[i]; curve[i] = cum; peak = Math.max(peak, cum); dd = Math.min(dd, cum - peak); }
+  const srt = Array.from(eq).sort((a, b) => b - a);
+  let half = -1, acc = 0;
+  if (tot > 0) for (let i = 0; i < nD; i++) { acc += srt[i]; if (acc >= tot / 2) { half = i + 1; break; } }
+  return { curve, total: tot, perDay: mean, perTrade: n ? tot / n : 0,
+    sharpe: sd ? mean / sd * Math.sqrt(252) : 0, dd, pos: live ? pos / live : 0,
+    days: live, half, n };
+}
+
+/* ---------------------------------------------------------------- render */
+function fmt(v, d = 0) { return v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+function css(v) { return getComputedStyle(document.body).getPropertyValue(v).trim(); }
+
+function tiles(s, base) {
+  const sign = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+  const T = [
+    ['per day', '$' + fmt(s.perDay, 1), s.n.toLocaleString() + ' entries', sign(s.perDay)],
+    ['return on premium', (s.ret * 100).toFixed(1) + '%', 'per entry', sign(s.ret)],
+    ['break-even', s.be >= 16 ? '16+ ticks' : s.be.toFixed(1) + ' ticks',
+      'slippage per stop', s.be >= 2 ? 'pos' : s.be > 0 ? '' : 'neg'],
+    ['sharpe', fmt(s.sharpe, 2), 'daily, ann.', sign(s.sharpe)],
+    ['positive days', (s.pos * 100).toFixed(1) + '%', '', ''],
+    ['max drawdown', '$' + fmt(s.dd), '', s.dd < 0 ? 'neg' : ''],
+    ['days to half', s.half < 0 ? '—' : s.half, s.half > 0 && s.half < 20 ? 'tail-dependent' : '', s.half > 0 && s.half < 20 ? 'neg' : ''],
+    ['vs permuted', (base === null ? '—' : (s.total > base ? '+' : '') + '$' + fmt(s.total - base)), base === null ? '' : 'above the null mean', base === null ? '' : sign(s.total - base)]
+  ];
+  document.getElementById('tiles').innerHTML = T.map(([k, v, n, c]) =>
+    `<div class="tile"><span class="k">${k}</span><span class="v ${c}">${v}</span><span class="n">${n}</span></div>`).join('');
+}
+
+/** Size a canvas for the device pixel ratio, ONCE per render, idempotently.
+ *
+ *  The bug this replaces: reading `cv.height` to get the logical height and
+ *  then writing `cv.height = that * dpr`. After the first render `cv.height`
+ *  IS the scaled value, so every subsequent render multiplied by `dpr` again
+ *  — the chart grew by a factor of dpr per update until it broke. The logical
+ *  height has to come from somewhere that does not change, so it is captured
+ *  from the markup on first use and read from `dataset` forever after. */
+function fit(cv) {
+  const dpr = devicePixelRatio || 1;
+  if (!cv.dataset.h) cv.dataset.h = cv.getAttribute('height') || cv.height;
+  const H = +cv.dataset.h;
+  const W = Math.max(1, cv.clientWidth || cv.parentElement.clientWidth);
+  cv.style.height = H + 'px';
+  cv.width = Math.round(W * dpr);
+  cv.height = Math.round(H * dpr);
+  const g = cv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.scale(dpr, dpr);
+  g.clearRect(0, 0, W, H);
+  return { g, W, H };
+}
+
+function line(cv, curve, band) {
+  const { g, W, H: Ht } = fit(cv);
+  const pad = { l: 62, r: 10, t: 10, b: 22 }, w = W - pad.l - pad.r, h = Ht - pad.t - pad.b;
+  const n = curve.length;
+  let lo = 0, hi = 0;
+  for (const v of curve) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  if (band) for (let i = 0; i < n; i++) { lo = Math.min(lo, band.lo[i]); hi = Math.max(hi, band.hi[i]); }
+  if (hi === lo) hi = lo + 1;
+  const pd = 0.06 * (hi - lo); lo -= pd; hi += pd;
+  const X = i => pad.l + i / (n - 1) * w, Y = v => pad.t + (1 - (v - lo) / (hi - lo)) * h;
+  g.strokeStyle = css('--line-soft'); g.fillStyle = css('--text-faint');
+  g.font = '10px "IBM Plex Mono",monospace'; g.textAlign = 'right';
+  for (let k = 0; k <= 4; k++) {
+    const v = lo + (hi - lo) * k / 4, y = Y(v);
+    g.beginPath(); g.moveTo(pad.l, y); g.lineTo(W - pad.r, y); g.stroke();
+    g.fillText('$' + fmt(v), pad.l - 7, y + 3);
+  }
+  g.setLineDash([3, 3]); g.strokeStyle = css('--text-faint'); g.beginPath();
+  g.moveTo(pad.l, Y(0)); g.lineTo(W - pad.r, Y(0)); g.stroke(); g.setLineDash([]);
+  if (band) {
+    g.fillStyle = css('--null') + '44'; g.beginPath(); g.moveTo(X(0), Y(band.lo[0]));
+    for (let i = 1; i < n; i++) g.lineTo(X(i), Y(band.lo[i]));
+    for (let i = n - 1; i >= 0; i--) g.lineTo(X(i), Y(band.hi[i]));
+    g.closePath(); g.fill();
+  }
+  g.strokeStyle = css('--brass'); g.lineWidth = 1.6; g.beginPath();
+  for (let i = 0; i < n; i++) i ? g.lineTo(X(i), Y(curve[i])) : g.moveTo(X(i), Y(curve[i]));
+  g.stroke();
+  g.textAlign = 'left'; g.fillStyle = css('--text-faint');
+  g.fillText(H.days[0].slice(0, 7), pad.l, Ht - 6);
+  g.textAlign = 'right'; g.fillText(H.days[n - 1].slice(0, 7), W - pad.r, Ht - 6);
+}
+
+function hist(cv, xs) {
+  const { g, W, H: Ht } = fit(cv);
+  const edges = [0, .1, .25, .5, .75, .9, 1, 1.25, 1.5, 2, 3, 5, 1e9];
+  const labs = ['0', '.1', '.25', '.5', '.75', '.9', '1', '1.25', '1.5', '2', '3', '5+'];
+  const c = new Array(edges.length - 1).fill(0);
+  for (const x of xs) { let k = 0; while (k < edges.length - 2 && x >= edges[k + 1]) k++; c[k]++; }
+  const mx = Math.max(1, ...c), pad = { l: 8, r: 8, t: 8, b: 20 };
+  const w = (W - pad.l - pad.r) / c.length, h = Ht - pad.t - pad.b;
+  g.font = '10px "IBM Plex Mono",monospace'; g.textAlign = 'center';
+  for (let i = 0; i < c.length; i++) {
+    const bh = c[i] / mx * h, x = pad.l + i * w;
+    g.fillStyle = edges[i] < 1 ? css('--rust') : css('--jade');
+    g.globalAlpha = .82; g.fillRect(x + 1.5, pad.t + h - bh, w - 3, bh); g.globalAlpha = 1;
+    g.fillStyle = css('--text-faint');
+    g.fillText(labs[i] + '×', x + w / 2, Ht - 6);
+    if (c[i] && bh > 13) { g.fillStyle = css('--panel');
+      g.fillText(((c[i] / xs.length) * 100).toFixed(0) + '%', x + w / 2, pad.t + h - bh + 11); }
+  }
+}
+
+/* ------------------------------------------------------------- the null */
+
+
+/** Permute WHICH DAY's chart each day reads, bar for bar. Holds the trade
+ *  count, the call/put mix and the fat tail; removes only the information. */
+function permutation(seed) {
+  const nD = H.days.length;
+  let s = seed >>> 0 || 1;
+  const rnd = () => (s ^= s << 13, s ^= s >>> 17, s ^= s << 5, (s >>> 0) / 4294967296);
+  const p = new Int32Array(nD);
+  for (let i = 0; i < nD; i++) p[i] = i;
+  for (let i = nD - 1; i > 0; i--) { const j = (rnd() * (i + 1)) | 0;[p[i], p[j]] = [p[j], p[i]]; }
+  return p;
+}
+function nullBand(rule, draws) {
+  if (!draws || !rule.length) return null;
+  const nD = H.days.length, all = [];
+  for (let d = 0; d < draws; d++) {
+    const r = run(rule, permutation(d * 2654435761 + 12345));
+    let cum = 0; const c = new Float64Array(nD);
+    for (let i = 0; i < nD; i++) { cum += r.eq[i]; c[i] = cum; }
+    all.push(c);
+  }
+  const lo = new Float64Array(nD), hi = new Float64Array(nD), col = new Float64Array(draws);
+  let mean = 0;
+  for (let i = 0; i < nD; i++) {
+    for (let d = 0; d < draws; d++) col[d] = all[d][i];
+    const s = Array.from(col).sort((a, b) => a - b);
+    lo[i] = s[Math.floor(.05 * (draws - 1))]; hi[i] = s[Math.ceil(.95 * (draws - 1))];
+  }
+  for (let d = 0; d < draws; d++) mean += all[d][nD - 1];
+  return { lo, hi, mean: mean / draws };
+}
+
+/* ------------------------------------------------- staging and applying */
+let pending = null, staged = 0, auto = false;
+function stage() {
+  staged++;
+  const b = document.getElementById('go');
+  b.classList.add('pending'); b.textContent = `update (${staged})`;
+  if (auto) apply();
+}
+/** How many ticks of slippage on every stop before this returns nothing.
+ *  The figure that makes two policies comparable independently of how often
+ *  they act. Solved by bisection on the real run. */
+function breakEven(rule) {
+  const keep = S.slip;
+  const at = k => { S.slip = k; const r = run(rule, null);
+                    return r.eq.reduce((a, b) => a + b, 0); };
+  if (at(0) <= 0) { S.slip = keep; return 0; }
+  let lo = 0, hi = 1;
+  while (at(hi) > 0 && hi < 16) hi *= 2;
+  if (at(hi) > 0) { S.slip = keep; return hi; }
+  for (let k = 0; k < 14; k++) { const m = (lo + hi) / 2; (at(m) > 0 ? lo = m : hi = m); }
+  S.slip = keep; return (lo + hi) / 2;
+}
+function apply() {
+  clearTimeout(pending);
+  pending = setTimeout(() => {
+    const rule = compile();
+    const r = run(rule, null);
+    const s = score(r.eq, r.n);
+    s.ret = r.prem ? (s.total / r.prem) : 0;
+    s.acted = r.n ? r.acted / r.n : 0;
+    s.be = breakEven(rule);
+    const band = nullBand(rule, S.draws);
+    tiles(s, band ? band.mean : null);
+    line(document.getElementById('eq'), s.curve, band);
+    hist(document.getElementById('hist'), r.xs);
+    document.getElementById('why').textContent =
+      `${r.n.toLocaleString()} entries, ${(s.acted * 100).toFixed(0)}% of them ` +
+      `exited on a rule rather than settling. Bars left of 1.0× lost money.`;
+    if (staged) { trials++; document.getElementById('ntrials').textContent = trials; }
+    staged = 0;
+    const b = document.getElementById('go');
+    b.classList.remove('pending'); b.textContent = 'update';
+  }, 10);
+}
+function redraw() { const k = staged; staged = 0; apply(); staged = k; }
+
+/* ------------------------------------------------------------------- UI */
+function seg(id, opts, get, set) {
+  const el = document.getElementById(id);
+  el.innerHTML = opts.map(([v, l]) =>
+    `<button type="button" data-v="${v}" aria-pressed="${String(get()) === String(v)}">${l}</button>`).join('');
+  el.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    set(b.dataset.v);
+    [...el.children].forEach(c => c.setAttribute('aria-pressed', c === b));
+    stage();
+  };
+}
+const clk = m => `${String(((570 + m) / 60) | 0).padStart(2, '0')}:${String((570 + m) % 60).padStart(2, '0')}`;
+const opt = (v, l, on) => `<option value="${v}"${on ? ' selected' : ''}>${l}</option>`;
+
+const ACT_WHY = {
+  close: 'Close and take the proceeds. Costs a second commission and a fill.',
+  short: 'Keep the long and SELL one strike TOWARD the money, holding the spread ' +
+         'to expiry. Collects a credit, caps risk at the width, and needs NO exit ' +
+         'fill at all — settlement is free.',
+  cover: 'Keep the long and SELL one strike FURTHER OUT, holding to expiry. A long ' +
+         'spread: smaller credit, but the position can still gain.'
+};
+
+function buildUI() {
+  seg('sel', H.sel.map((s, i) => [i, s.replace('delta:', 'Δ').replace('price:', '$')]),
+    () => S.sel, v => S.sel = +v);
+  seg('side', [['auto', 'signal picks'], ['call', 'calls'], ['put', 'puts']],
+    () => S.side, v => S.side = v);
+  seg('act', [['close', 'close'], ['short', 'SHORT it'], ['cover', 'COVER it']],
+    () => S.act, v => { S.act = v; document.getElementById('actwhy').textContent = ACT_WHY[v]; });
+
+  const sl = document.getElementById('slots');
+  sl.innerHTML = H.slots.map((m, i) =>
+    `<button type="button" data-i="${i}" aria-pressed="true">${clk(m)}</button>`).join('');
+  sl.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = +b.dataset.i;
+    S.slots.has(i) ? S.slots.delete(i) : S.slots.add(i);
+    b.setAttribute('aria-pressed', S.slots.has(i)); stage();
+  };
+  const setSlots = xs => {
+    S.slots = new Set(xs);
+    [...sl.children].forEach((c, i) => c.setAttribute('aria-pressed', S.slots.has(i)));
+    stage();
+  };
+  document.getElementById('sall').onclick = () => setSlots(H.slots.map((_, i) => i));
+  document.getElementById('slate').onclick = () =>
+    setSlots(H.slots.map((_, i) => i).filter(i => H.slots[i] >= 375));
+  document.getElementById('snone').onclick = () => setSlots([]);
+
+  const mk = (id, none, vals, fmtv, set) => {
+    const el = document.getElementById(id);
+    el.innerHTML = opt(0, none, true) + vals.map(v => opt(v, fmtv(v))).join('');
+    el.onchange = () => { set(+el.value); stage(); };
+  };
+  mk('l', 'none', [0.35, 0.5, 0.65, 0.8, 0.9], v => v.toFixed(2) + '×', v => S.l = v);
+  mk('w', 'none', [1.2, 1.5, 2, 2.5, 3, 4, 5, 7], v => v.toFixed(2) + '×', v => S.w = v);
+  mk('tr', 'none', [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], v => v.toFixed(2), v => S.trail = v);
+  mk('ck', 'none', [1, 2, 3, 5, 10, 15, 20, 30], v => '+' + v + ' min', v => S.clock = v);
+
+  const xc = document.getElementById('xcol');
+  xc.innerHTML = opt('', '— no chart exit —', true) +
+    H.columns.map(c => opt(c, c)).join('');
+  const xt = document.getElementById('xtf');
+  xt.innerHTML = H.tfs.map(t => opt(t, t + 'm', t === 30)).join('');
+  const xd = document.getElementById('xdir');
+  xd.innerHTML = opt('ge', 'rises to ≥', true) + opt('le', 'falls to ≤');
+  const xv = document.getElementById('xval');
+  const xrange = () => {
+    const m = H.ind.find(z => z.col === xc.value && z.tf === +xt.value);
+    document.getElementById('xrange').textContent = xc.value
+      ? (m && m.ok ? `${xc.value} @${xt.value}m runs ${m.lo.toFixed(2)} … ${m.hi.toFixed(2)}`
+                   : 'not available at this timeframe')
+      : 'Exit when the SPX chart itself says so — the first bar after entry that crosses.';
+  };
+  const xset = () => { S.x = { col: xc.value, tf: +xt.value, dir: xd.value, val: xv.value.trim() };
+                       xrange(); stage(); };
+  [xc, xt, xd].forEach(e => e.onchange = xset);
+  xv.oninput = xset;
+  xrange();
+
+  const dsel = document.getElementById('draws');
+  dsel.innerHTML = [0, 10, 20, 50].map(v => opt(v, v || 'off', v === S.draws)).join('');
+  dsel.onchange = () => { S.draws = +dsel.value; redraw(); };
+
+  const GROUPS = [['band position', ['s_pctb', 'f_pctb', 'pctb_spread']],
+                  ['band width', ['s_bandwidth', 'f_bandwidth', 'bandwidth_ratio']],
+                  ['gaps', ['gap_low', 'gap_mid', 'gap_high']],
+                  ['prior bar / shape', ['prev_range', 'green_red_avg', 'zone', 'slope_pair']]];
+  const box = document.getElementById('units');
+  box.innerHTML = GROUPS.map(([name, cols], gi) => `
+    <div class="unit" data-g="${gi}">
+      <div class="top"><h3>${name}</h3>
+        <select class="tf" data-g="${gi}">${H.tfs.map(t => opt(t, t + 'm', t === 30)).join('')}</select></div>
+      <div class="heads"><span>entry filter</span><span>call ≥</span><span>put ≤</span><span>gate</span><span></span></div>
+      ${cols.filter(c => H.columns.includes(c)).map(c => `
+        <div class="ind off" data-col="${c}" data-g="${gi}">
+          <span class="nm" title="${c}">${c}</span>
+          <input type="text" data-k="call" placeholder="—">
+          <input type="text" data-k="put" placeholder="—">
+          <input type="text" data-k="gate" placeholder="—">
+          <select class="cmp" data-k="cmp"><option value="ge">≥</option><option value="le">≤</option></select>
+        </div>`).join('')}
+      <div class="range" data-g="${gi}"></div></div>`).join('');
+
+  const tfOf = gi => +box.querySelector(`select.tf[data-g="${gi}"]`).value;
+  const cfg = (col, gi) => (S.ind[col] ||= { tf: tfOf(gi), call: '', put: '', gate: '', cmp: 'ge' });
+  const ranges = gi => {
+    const tf = tfOf(gi);
+    box.querySelector(`.range[data-g="${gi}"]`).textContent =
+      GROUPS[gi][1].filter(c => H.columns.includes(c)).map(c => {
+        const m = H.ind.find(z => z.col === c && z.tf === tf);
+        return m && m.ok ? `${c} ${m.lo.toFixed(2)}…${m.hi.toFixed(2)}` : `${c} —`;
+      }).join('   ');
+  };
+  GROUPS.forEach((_, gi) => ranges(gi));
+  box.addEventListener('input', e => {
+    const row = e.target.closest('.ind'); if (!row) return;
+    const c = cfg(row.dataset.col, +row.dataset.g);
+    c[e.target.dataset.k] = e.target.value.trim(); c.tf = tfOf(+row.dataset.g);
+    row.querySelectorAll('input').forEach(inp =>
+      inp.classList.toggle('on-' + inp.dataset.k[0], (c[inp.dataset.k] ?? '') !== ''));
+    row.classList.toggle('off', !c.call && !c.put && !c.gate);
+    stage();
+  });
+  box.addEventListener('change', e => {
+    if (e.target.classList.contains('tf')) {
+      const gi = +e.target.dataset.g;
+      GROUPS[gi][1].forEach(c => { if (S.ind[c]) S.ind[c].tf = +e.target.value; });
+      ranges(gi); stage();
+    } else if (e.target.dataset.k === 'cmp') {
+      cfg(e.target.closest('.ind').dataset.col, +e.target.closest('.ind').dataset.g)
+        .cmp = e.target.value;
+      stage();
+    }
+  });
+  document.getElementById('actwhy').textContent = ACT_WHY.close;
+}
+
+let ro = null;
+addEventListener('resize', () => { clearTimeout(ro); ro = setTimeout(redraw, 140); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
+
+(async function boot() {
+  try {
+    D = await decode();
+    document.getElementById('boot').remove();
+    document.getElementById('app').hidden = false;
+    buildUI();
+    document.getElementById('go').onclick = apply;
+    const ab = document.getElementById('autoup');
+    ab.onchange = () => { auto = ab.checked; if (auto) apply(); };
+    addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
+    document.getElementById('reset').onclick = () => location.reload();
+    apply();
+  } catch (err) {
+    document.getElementById('boot').textContent = 'could not unpack: ' + err.message;
+  }
+})();
+
+</script>
