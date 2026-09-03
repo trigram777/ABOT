@@ -1,5 +1,4 @@
-# ABOT
-# Intraday Options Research Engine
+# ABOT -- Intraday Options Research Engine
 
 A backtesting engine and live trading system for same-day-expiry index options,
 built from scratch over a decade of tick data.
@@ -149,5 +148,5 @@ profitability is made or implied.
 
 ## Contact
 
-<!-- C.L. Coleman, chris@hepteract.com -->
+C.L. Coleman :  [Email](mailto:github@hepteract.com), [Discord](https://discord.com/users/1030258082363744356), [WhatsApp](https://wa.me/4242252799), [LINE](https://line.me/ti/p/xyhameAPJS)
 
