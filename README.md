@@ -118,7 +118,7 @@ sessions on an accelerated clock, no broker connection:
 
 - [**P&L explorer**](https://htmlpreview.github.io/?https://github.com/trigram777/ABOT/blob/main/explorer/results/explorer.html) — a browser tool for exploring exit policies over a large panel
   of historical entries
-- [**Trading desktop**](https://github.com/trigram777/ABOT/blob/main/media/Frontend.gif?raw=true) (Qt) — dashboard and live chart
+- [**Trading desktop**](https://raw.githubusercontent.com/trigram777/ABOT/refs/heads/main/media/Frontend.gif) (Qt) — dashboard and live chart
 - **Terminal interface** (Textual) <!-- asciinema link -->
 
 ---
